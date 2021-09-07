@@ -6,13 +6,6 @@
 import sys
 assert sys.version_info >= (3, 5)
 
-# Is this notebook running on Colab?
-IS_COLAB = "google.colab" in sys.modules
-
-if IS_COLAB:
-    !pip install -q -U tensorflow-addons
-    !pip install -q -U transformers
-
 # Scikit-Learn ≥0.20 is required
 import sklearn
 assert sklearn.__version__ >= "0.20"
