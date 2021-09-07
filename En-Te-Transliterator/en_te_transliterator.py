@@ -53,60 +53,62 @@ uploaded = files.upload()
 
 import pandas as pd
 
-"""## Loading data"""
-
-train_data = pd.read_csv("./te.translit.sampled.train.tsv", sep="\t", header=None)
-val_data = pd.read_csv("./te.translit.sampled.dev.tsv", sep="\t", header=None)
-test_data = pd.read_csv("./te.translit.sampled.test.tsv", sep="\t", header=None)
-train_data.tail()
-
-train_X, train_Y = train_data[1], train_data[0]
-val_X, val_Y = val_data[1], val_data[0]
-
-batch_size = 64  # Batch size for training.
-epochs = 100  # Number of epochs to train for.
-latent_dim = 256  # Latent dimensionality of the encoding space.
-embed_size = 128
 
 """## Preparing Data"""
 
 def prepare_data(file_path):
-  input_texts = []
-  target_texts = []
-  input_characters = set()
-  target_characters = set()
-  with open(file_path, "r", encoding="utf-8") as f:
-    lines = f.read().split("\n")
-    i = 1
-  for line in lines[:-1]:
-    input_text, target_text, _ = line.split("\t")
-    # We use "tab" as the "start sequence" character
-    # for the targets, and "\n" as "end sequence" character.
-    target_text = "\t" + target_text + "\n"
-    input_texts.append(input_text)
-    target_texts.append(target_text)
-    for char in input_text:
-        if char not in input_characters:
-            input_characters.add(char)
-    for char in target_text:
-        if char not in target_characters:
-            target_characters.add(char)
+    input_texts = []
+    target_texts = []
+    input_characters = set()
+    target_characters = set()
+    with open(file_path, "r", encoding="utf-8") as f:
+        lines = f.read().split("\n")
+        i = 1
+    for line in lines[:-1]:
+        input_text, target_text, _ = line.split("\t")
+        # We use "tab" as the "start sequence" character
+        # for the targets, and "\n" as "end sequence" character.
+        target_text = "\t" + target_text + "\n"
+        input_texts.append(input_text)
+        target_texts.append(target_text)
+        for char in input_text:
+            if char not in input_characters:
+                input_characters.add(char)
+        for char in target_text:
+            if char not in target_characters:
+                target_characters.add(char)
 
-  return input_texts, target_texts, input_characters, target_characters
-
-
-train_input_texts, train_target_texts, train_input_characters, train_target_characters = prepare_data("./te.translit.sampled.train.tsv")
-val_input_texts, val_target_texts, val_input_characters, val_target_characters = prepare_data("./te.translit.sampled.dev.tsv")
-test_input_texts, test_target_texts, test_input_characters, test_target_characters = prepare_data("./te.translit.sampled.test.tsv")
+    return input_texts, target_texts, input_characters, target_characters
 
 def tokenizer(data):
-  fn = keras.preprocessing.text.Tokenizer(char_level=True, lower=False)
-  fn.fit_on_texts([str(x) for x in data])
-  return fn
+    fn = keras.preprocessing.text.Tokenizer(char_level=True, lower=False)
+    fn.fit_on_texts([str(x) for x in data])
+    return fn
 
 #tokenizer.sequences_to_texts([[20, 6, 9, 8, 1]])
 
 if __name__=="__main__":
+    
+    """## Loading data"""
+
+    train_data = pd.read_csv("./dataset/te.translit.sampled.train.tsv", sep="\t", header=None)
+    val_data = pd.read_csv("./dataset/te.translit.sampled.dev.tsv", sep="\t", header=None)
+    test_data = pd.read_csv("./dataset/te.translit.sampled.test.tsv", sep="\t", header=None)
+    train_data.tail()
+
+    train_X, train_Y = train_data[1], train_data[0]
+    val_X, val_Y = val_data[1], val_data[0]
+
+    batch_size = 64  # Batch size for training.
+    epochs = 100  # Number of epochs to train for.
+    latent_dim = 256  # Latent dimensionality of the encoding space.
+    embed_size = 128
+       
+    
+    train_input_texts, train_target_texts, train_input_characters, train_target_characters = prepare_data("./te.translit.sampled.train.tsv")
+    val_input_texts, val_target_texts, val_input_characters, val_target_characters = prepare_data("./te.translit.sampled.dev.tsv")
+    test_input_texts, test_target_texts, test_input_characters, test_target_characters = prepare_data("./te.translit.sampled.test.tsv")
+
 
     tokenizer_X = tokenizer(train_X)
     encoded_train_X = np.array(tokenizer_X.texts_to_sequences([str(x) for x in train_X]))
@@ -150,6 +152,10 @@ if __name__=="__main__":
 
     model.compile(loss="sparse_categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"])
     history = model.fit(encoded_train_X, encoded_train_Y, epochs=5)
+    
+    test_loss, test_accuracy = model.evaluate(encoded_test_X, encoded_test_Y)
+    
+    print(test_accuracy)
 
 
 
